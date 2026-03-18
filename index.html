@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ArenaVault - Premium Gaming</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --bg-mixed: linear-gradient(135deg, #ffffff 0%, #fff0e6 50%, #ffe4d6 100%);
+            --fire-grad: linear-gradient(90deg, #d9241b, #f05a28, #f5a623); 
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text-dark: #1e293b;
+        }
+
+        body { user-select: none; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-mixed); background-attachment: fixed; color: var(--text-dark); overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { display: none; }
+        
+        .premium-light-bg { position: fixed; inset: 0; z-index: -10; background: var(--bg-mixed); }
+        .bg-pattern { position: fixed; inset: 0; z-index: -9; background-image: radial-gradient(rgba(240, 90, 40, 0.05) 1px, transparent 1px); background-size: 20px 20px; }
+
+        .page { display: none !important; } .page.active { display: block !important; padding-bottom: 120px; animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .glass-card { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,1); box-shadow: 0 10px 30px rgba(0,0,0,0.06); border-radius: 20px; }
+        .fire-btn { background: var(--fire-grad); box-shadow: 0 5px 15px rgba(240, 90, 40, 0.3); color: white; border: none; }
+        .btn-press { transition: transform 0.1s, filter 0.2s; position: relative; overflow: hidden; } 
+        .btn-press:active { transform: scale(0.95); filter: brightness(0.9); box-shadow: none; }
+        
+        #globalLoader { position: fixed; inset: 0; z-index: 9999; background: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { width: 50px; height: 50px; border: 4px solid #fce7f3; border-top-color: #f05a28; border-radius: 50%; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1E293B; border: 1px solid #f05a28; color: white; padding: 14px 28px; border-radius: 50px; font-weight: bold; font-size: 14px; z-index: 10000; opacity: 0; transition: 0.3s; box-shadow: 0 5px 25px rgba(240, 90, 40, 0.3); pointer-events: none; white-space: nowrap; }
+
+        #bottomNav { background: var(--fire-grad); border-radius: 20px 20px 0 0; box-shadow: 0 -5px 25px rgba(217, 36, 27, 0.3); }
+        .nav-item { color: rgba(255, 255, 255, 0.7); transition: 0.3s; position: relative; }
+        .nav-active { color: #ffffff !important; font-weight: 900; transform: translateY(-3px); text-shadow: 0 0 10px rgba(255,255,255,0.8); }
+
+        .wheel-outer { position: relative; width: 280px; height: 280px; border-radius: 50%; padding: 12px; background: #3e1b04; box-shadow: 0 10px 20px rgba(0,0,0,0.2), inset 0 0 15px #000; margin: 0 auto; border: 6px solid #f5a623; }
+        .wheel-inner { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; position: relative; transition: transform 4s cubic-bezier(0.1, 2.7, 0.5, 1); border: 2px solid #ffd700; background: conic-gradient(from -22.5deg, #f59e0b 0deg 45deg, #10b981 45deg 90deg, #3b82f6 90deg 135deg, #f97316 135deg 180deg, #ef4444 180deg 225deg, #10b981 225deg 270deg, #3b82f6 270deg 315deg, #f59e0b 315deg 360deg); }
+        .slice-text { position: absolute; top: 10px; left: 50%; width: 60px; margin-left: -30px; text-align: center; color: white; font-weight: 900; font-size: 15px; transform-origin: 50% 115px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+        .st-1 { transform: rotate(0deg); } .st-2 { transform: rotate(45deg); } .st-3 { transform: rotate(90deg); } .st-4 { transform: rotate(135deg); }
+        .st-5 { transform: rotate(180deg); } .st-6 { transform: rotate(225deg); } .st-7 { transform: rotate(270deg); } .st-8 { transform: rotate(315deg); }
+        .wheel-center-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; background: radial-gradient(circle, #fff3b0, #f5a623); border-radius: 50%; border: 4px solid #fff; z-index: 5; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; color: #78350f; cursor: pointer; box-shadow: 0 0 15px rgba(0,0,0,0.4); text-shadow: 0 1px 1px rgba(255,255,255,0.5); }
+        .wheel-center-btn:active { transform: translate(-50%, -50%) scale(0.9); }
+        .wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 35px solid #ff0000; z-index: 10; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4)); }
+
+        .scratch-container { position: relative; width: 100%; max-width: 300px; height: 150px; margin: 0 auto; border-radius: 16px; overflow: hidden; background: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border: 2px solid #E2E8F0; }
+        .scratch-prize { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 900; color: #10B981; background: #F8FAFC; text-shadow: 0 2px 4px rgba(16,185,129,0.2); z-index: 1; }
+        #scratchCanvas { position: absolute; inset: 0; z-index: 2; cursor: pointer; }
+
+        .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+        .mine-btn { background: #F1F5F9; border: 1px solid #CBD5E1; aspect-ratio: 1; border-radius: 12px; font-size: 26px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.1); transition: 0.2s; color: #0F172A; }
+        .mine-btn:active { transform: scale(0.92); box-shadow: none; border-color: #f5a623; }
+        .mine-btn.opened-safe { background: linear-gradient(135deg, #10B981, #047857); border: none; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); color: white; animation: pop 0.3s; }
+        .mine-btn.opened-mine { background: linear-gradient(135deg, #EF4444, #B91C1C); border: none; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); color: white; animation: shake 0.4s; }
+        
+        @keyframes pop { 0% { transform: scale(0.5); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
+
+        /* 🔥 NEW NEON TIC TAC TOE STYLES (KATTI BATTI) 🔥 */
+        .ttt-board-container { background: linear-gradient(135deg, #0f172a, #1e1b4b); border-radius: 16px; padding: 20px; box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.3); position: relative; max-width: 320px; margin: 0 auto; border: 1px solid rgba(255,255,255,0.05); }
+        .ttt-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; position: relative; z-index: 2; }
+        .ttt-cell { background: rgba(255,255,255,0.05); border: 2px solid rgba(56, 189, 248, 0.2); box-shadow: inset 0 0 10px rgba(56, 189, 248, 0.05); aspect-ratio: 1; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 60px; cursor: pointer; transition: 0.2s; }
+        .ttt-cell:active { transform: scale(0.9); background: rgba(255,255,255,0.1); }
+        .neon-o { color: #38bdf8; text-shadow: 0 0 10px #38bdf8, 0 0 20px #38bdf8; animation: pop 0.3s; font-family: 'Segoe UI', sans-serif; font-weight: 300; } 
+        .neon-x { color: #f87171; text-shadow: 0 0 10px #f87171, 0 0 20px #f87171; animation: pop 0.3s; font-family: 'Segoe UI', sans-serif; font-weight: 300; }
+
+        .glowing-wings { animation: wingGlow 2s ease-in-out infinite alternate; }
+        .glowing-crown { animation: crownGlow 1.5s ease-in-out infinite alternate; }
+        @keyframes wingGlow { 0% { filter: drop-shadow(0 0 5px #f5a623) brightness(1); transform: translate(-50%, -50%) scale(1); } 100% { filter: drop-shadow(0 0 15px #ffaa00) brightness(1.1); transform: translate(-50%, -50%) scale(1.05); } }
+        @keyframes crownGlow { 0% { filter: drop-shadow(0 0 5px #ffaa00) brightness(1); transform: translateX(-50%) translateY(0); } 100% { filter: drop-shadow(0 0 15px #ffd700) brightness(1.2); transform: translateX(-50%) translateY(-3px); } }
+    </style>
+</head>
+<body>
+    <div class="premium-light-bg"></div>
+    <div class="bg-pattern"></div>
+    
+    <div id="globalLoader"><div class="spinner mb-4"></div><h2 class="text-gray-900 font-black tracking-widest text-xl">ARENA<span class="text-[#f05a28]">VAULT</span></h2></div>
+    <div id="toast"></div>
+
+    <!-- AD MODAL OVERLAY -->
+    <div id="customAdOverlay" class="fixed inset-0 z-[99999] bg-black hidden flex-col">
+        <div class="flex justify-between items-center p-4 bg-gray-900 shadow-md">
+            <span class="text-white text-[10px] font-black tracking-widest uppercase"><i class="fa-solid fa-rectangle-ad text-[#f05a28] mr-2"></i> Advertisement</span>
+            <button id="skipAdBtn" class="bg-gray-700 text-gray-300 px-4 py-2 rounded-full text-xs font-black disabled:opacity-50 transition-colors shadow-inner" disabled>Wait 5s...</button>
+        </div>
+        <div id="adIframeContainer" class="flex-1 w-full h-full bg-[#111827] flex items-center justify-center relative"></div>
+    </div>
+
+    <!-- 1. Auth Page -->
+    <div id="loginPage" class="page min-h-screen flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md p-8 text-center border-t-4 border-[#f05a28]">
+            <div class="mb-8">
+                <i class="fa-solid fa-gamepad text-5xl text-[#f05a28] mb-3 drop-shadow-md"></i>
+                <h1 class="text-3xl font-black text-gray-900 tracking-widest uppercase">Arena<span class="text-[#f05a28]">Vault</span></h1>
+            </div>
+            
+            <div id="loginForm">
+                <input type="email" id="loginEmail" placeholder="Email Address" class="w-full mb-4 p-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 outline-none focus:border-[#f05a28] transition-all font-bold">
+                <input type="password" id="loginPassword" placeholder="Password" class="w-full mb-6 p-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 outline-none focus:border-[#f05a28] transition-all font-bold">
+                <button onclick="playSound('click'); loginUser()" class="w-full py-4 rounded-xl text-white font-black text-lg fire-btn btn-press tracking-widest uppercase" data-i18n="login_btn">LOGIN NOW</button>
+                <p class="mt-6 text-xs font-bold text-gray-500 cursor-pointer uppercase tracking-widest" onclick="toggleAuthMode()"><span data-i18n="new_player">New Player?</span> <span class="text-[#f05a28]" data-i18n="create_acc">Create Account</span></p>
+            </div>
+
+            <div id="signupForm" style="display: none;">
+                <div class="bg-green-100 border border-green-300 rounded-xl p-2 mb-5">
+                    <span class="text-xs font-black text-green-700 uppercase tracking-widest"><i class="fa-solid fa-gift"></i> <span data-i18n="signup_bonus">Create account & get ₹10</span></span>
+                </div>
+                <input type="text" id="signupUser" placeholder="Username" class="w-full mb-4 p-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 outline-none focus:border-[#f05a28] font-bold">
+                <input type="email" id="signupEmail" placeholder="Email Address" class="w-full mb-4 p-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 outline-none focus:border-[#f05a28] font-bold">
+                <input type="password" id="signupPassword" placeholder="Password" class="w-full mb-4 p-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 outline-none focus:border-[#f05a28] font-bold">
+                <input type="text" id="signupReferral" placeholder="Refer Code (Optional)" class="w-full mb-6 p-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 outline-none focus:border-[#f05a28] font-bold">
+                <button onclick="playSound('click'); signupUser()" class="w-full py-4 rounded-xl text-white font-black text-lg fire-btn btn-press tracking-widest uppercase" data-i18n="signup_btn">SIGN UP</button>
+                <p class="mt-6 text-xs font-bold text-gray-500 cursor-pointer uppercase tracking-widest" onclick="toggleAuthMode()"><span data-i18n="already_reg">Already registered?</span> <span class="text-[#f05a28]" data-i18n="login_now">Login</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Home Page -->
+    <div id="homePage" class="page p-4 pt-6">
+        
+        <!-- 🔥 NEW: TOP BANNER AD CONTAINER 🔥 -->
+        <div class="glass-card mb-5 overflow-hidden relative shadow-sm" style="height: 60px; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #e2e8f0;">
+            <div class="absolute top-0 left-0 bg-[#f05a28] text-white text-[8px] font-black px-2 py-0.5 rounded-br-lg z-10 uppercase tracking-widest shadow-sm">Ad</div>
+            <div id="homeBannerAdContainer" class="w-full h-full flex justify-center items-center bg-gray-50">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest animate-pulse"><i class="fa-solid fa-rectangle-ad mr-1"></i> Advertisement Space</span>
+            </div>
+        </div>
+        <!-- --------------------------------- -->
+
+        <div class="glass-card p-5 mb-8 flex justify-between items-center">
+            <div>
+                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1" data-i18n="welcome">WELCOME BACK,</p>
+                <p class="text-2xl font-black text-gray-900 u-name tracking-wide drop-shadow-sm">Player</p>
+            </div>
+            <div class="bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-200 btn-press cursor-pointer shadow-sm" onclick="playSound('click'); navigateTo('walletPage')">
+                <p class="text-[9px] text-[#f05a28] uppercase tracking-widest font-black mb-1 flex items-center gap-1"><i class="fa-solid fa-wallet"></i> <span data-i18n="wallet">WALLET</span></p>
+                <h3 class="text-xl font-black text-green-600">₹<span class="u-bal">0.00</span></h3>
+            </div>
+        </div>
+        
+        <h3 class="text-xs font-black text-gray-500 mb-4 flex items-center gap-2 uppercase tracking-widest"><i class="fa-solid fa-gamepad text-[#f05a28]"></i> <span data-i18n="top_games">TOP GAMES</span></h3>
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="glass-card h-40 rounded-[24px] flex flex-col items-center justify-center btn-press overflow-hidden relative group" onclick="playSound('click'); navigateTo('casinoGamePage')">
+                <div class="absolute inset-0 bg-gradient-to-br from-orange-100 to-transparent opacity-50"></div>
+                <div class="relative w-16 h-16 mb-2 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-gradient-to-br from-yellow-300 to-amber-500 rounded-full shadow-[0_0_20px_rgba(245,166,35,0.4)]"></div>
+                    <i class="fa-solid fa-star text-3xl text-white z-10 relative left-[-2px] top-[-2px]"></i>
+                    <i class="fa-solid fa-bomb text-3xl text-gray-800 absolute right-[-2px] bottom-[-2px] z-20"></i>
+                </div>
+                <span class="text-[#f05a28] font-black tracking-widest text-sm uppercase z-10 drop-shadow-sm">MINES</span>
+            </div>
+            <div class="glass-card h-40 rounded-[24px] flex flex-col items-center justify-center btn-press overflow-hidden relative" onclick="playSound('click'); navigateTo('tttMenuPage')">
+                <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-transparent opacity-50"></div>
+                <div class="w-16 h-16 grid grid-cols-3 gap-1 mb-2 bg-white p-1 rounded-lg border border-blue-200">
+                    <div class="border border-blue-200 rounded-sm flex items-center justify-center"><span class="text-blue-500 font-bold text-xs">O</span></div>
+                    <div class="border border-blue-200 rounded-sm"></div>
+                    <div class="border border-blue-200 rounded-sm flex items-center justify-center"><span class="text-red-500 font-bold text-xs">X</span></div>
+                    <div class="border border-blue-200 rounded-sm"></div>
+                    <div class="border border-blue-200 rounded-sm flex items-center justify-center"><span class="text-blue-500 font-bold text-xs">O</span></div>
+                    <div class="border border-blue-200 rounded-sm"></div>
+                    <div class="border border-blue-200 rounded-sm flex items-center justify-center"><span class="text-red-500 font-bold text-xs">X</span></div>
+                    <div class="border border-blue-200 rounded-sm"></div>
+                    <div class="border border-blue-200 rounded-sm"></div>
+                </div>
+                <span class="text-blue-500 font-black tracking-widest text-[11px] uppercase">TIC TAC TOE</span>
+            </div>
+        </div>
+
+        <h3 class="text-xs font-black text-gray-500 mb-4 flex items-center gap-2 uppercase tracking-widest"><i class="fa-solid fa-trophy text-yellow-500"></i> <span data-i18n="hot_matches">HOT TOURNAMENTS</span></h3>
+        <div id="homeTournaments" class="flex flex-col gap-4"></div>
+    </div>
+
+    <!-- 3. Tournaments -->
+    <div id="tournamentPage" class="page p-4 pt-6">
+        <h2 class="text-2xl font-black text-gray-900 mb-6 uppercase tracking-widest flex items-center gap-3"><i class="fa-solid fa-trophy text-yellow-500"></i> Match Arena</h2>
+        <div class="flex gap-2 mb-8 glass-card p-1.5 bg-gray-50">
+            <button onclick="playSound('click'); loadTournaments('Upcoming')" class="flex-1 py-3.5 rounded-xl fire-btn text-white font-black text-xs uppercase btn-press tracking-wider">Upcoming</button>
+            <button onclick="playSound('click'); loadTournaments('Live')" class="flex-1 py-3.5 rounded-xl text-gray-500 font-bold text-xs uppercase">Live</button>
+            <button onclick="playSound('click'); loadTournaments('Completed')" class="flex-1 py-3.5 rounded-xl text-gray-500 font-bold text-xs uppercase">Completed</button>
+        </div>
+        <div id="tournamentList" class="flex flex-col gap-6"></div>
+    </div>
+
+    <!-- 4. Tic Tac Toe Menu & Board (UPGRADED TO NEON GLITCH-FREE UI) -->
+    <div id="tttMenuPage" class="page p-4 pt-8 min-h-screen">
+        <div class="flex items-center gap-4 mb-10"><i class="fa-solid fa-arrow-left text-gray-900 text-2xl btn-press cursor-pointer" onclick="playSound('click'); navigateTo('homePage');"></i></div>
+        <h2 class="text-2xl font-black text-gray-900 text-center mb-6 tracking-widest uppercase" data-i18n="select_level">SELECT LEVEL</h2>
+        <div class="glass-card mx-auto max-w-[280px] mb-12 p-5 border-2 border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)] text-center relative">
+            <div class="grid grid-cols-3 gap-2">
+                <div class="aspect-square flex items-center justify-center border border-blue-200 rounded bg-white"><span class="text-blue-500 font-black text-4xl">O</span></div>
+                <div class="aspect-square flex items-center justify-center border border-blue-200 rounded bg-white"><span class="text-red-500 font-black text-4xl">X</span></div>
+                <div class="aspect-square border border-blue-200 rounded bg-white"></div>
+                <div class="aspect-square border border-blue-200 rounded bg-white"></div>
+                <div class="aspect-square flex items-center justify-center border border-blue-200 rounded bg-white"><span class="text-blue-500 font-black text-4xl">O</span></div>
+                <div class="aspect-square flex items-center justify-center border border-blue-200 rounded bg-white"><span class="text-red-500 font-black text-4xl">X</span></div>
+                <div class="aspect-square flex items-center justify-center border border-blue-200 rounded bg-white"><span class="text-red-500 font-black text-4xl">X</span></div>
+                <div class="aspect-square border border-blue-200 rounded bg-white"></div>
+                <div class="aspect-square flex items-center justify-center border border-blue-200 rounded bg-white"><span class="text-blue-500 font-black text-4xl">O</span></div>
+            </div>
+        </div>
+        <div class="flex flex-col gap-4 max-w-[300px] mx-auto">
+            <button onclick="playSound('click'); openTTTGame();" class="bg-white border-2 border-blue-500 text-blue-600 rounded-xl py-4 font-black w-full flex items-center justify-center gap-3 btn-press shadow-sm"><i class="fa-solid fa-user"></i> VS <i class="fa-solid fa-desktop"></i> <span data-i18n="vs_bot">PLAY BOT</span></button>
+        </div>
+    </div>
+
+    <!-- 🔥 FIXED NEON TTT BOARD WITH WINNING LINE 🔥 -->
+    <div id="tttBoardPage" class="page p-4 pt-6 min-h-screen" style="background-color: #0f172a;">
+        <div class="flex items-center gap-4 mb-6">
+            <i class="fa-solid fa-arrow-left text-white text-2xl btn-press cursor-pointer bg-gray-800 w-10 h-10 flex items-center justify-center rounded-full shadow border border-gray-700" onclick="playSound('click'); navigateTo('tttMenuPage');"></i>
+            <div class="flex-1 text-center font-black text-xl tracking-widest flex items-center justify-center gap-3"><span class="text-[#38bdf8]">PLAYER</span> <span class="text-gray-500 text-sm">VS</span> <span class="text-[#f87171]">BOT</span></div>
+        </div>
+        
+        <div class="glass-card p-5 mb-8 border-t-4 border-[#38bdf8] bg-gray-800" style="background: rgba(30,41,59,0.9); border-color: rgba(56,189,248,0.5);">
+            <div class="flex gap-3 mb-4"><div class="relative w-full"><span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-black">₹</span><input type="number" id="tttBetAmount" placeholder="Bet Amt (Min ₹5)" class="w-full p-4 pl-8 bg-gray-900 text-white rounded-xl outline-none font-black tracking-wider border border-gray-700 focus:border-[#38bdf8]"></div></div>
+            <button id="startTttBtn" onclick="playSound('click'); startTTTGame();" class="w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-black text-lg rounded-xl btn-press tracking-widest uppercase shadow-lg shadow-blue-500/30">START MATCH</button>
+            <p id="tttStatus" class="text-center font-bold text-[#38bdf8] mt-4 tracking-widest uppercase hidden text-sm drop-shadow-sm">YOUR TURN</p>
+        </div>
+        
+        <!-- NEON GRID & SVG LINE -->
+        <div class="ttt-board-container pointer-events-none opacity-50" id="tttGridContainer">
+            <div class="ttt-board">
+                <div class="ttt-cell" id="t0" onclick="playerMoveTTT(0)"></div>
+                <div class="ttt-cell" id="t1" onclick="playerMoveTTT(1)"></div>
+                <div class="ttt-cell" id="t2" onclick="playerMoveTTT(2)"></div>
+                <div class="ttt-cell" id="t3" onclick="playerMoveTTT(3)"></div>
+                <div class="ttt-cell" id="t4" onclick="playerMoveTTT(4)"></div>
+                <div class="ttt-cell" id="t5" onclick="playerMoveTTT(5)"></div>
+                <div class="ttt-cell" id="t6" onclick="playerMoveTTT(6)"></div>
+                <div class="ttt-cell" id="t7" onclick="playerMoveTTT(7)"></div>
+                <div class="ttt-cell" id="t8" onclick="playerMoveTTT(8)"></div>
+            </div>
+            <!-- Winning Line SVG -->
+            <svg id="tttWinSvg" class="absolute inset-0 w-full h-full pointer-events-none hidden z-10" viewBox="0 0 100 100" preserveAspectRatio="none" style="padding: 20px;">
+                <line id="tttLine" x1="0" y1="0" x2="100" y2="100" stroke="#fcd34d" stroke-width="2.5" stroke-linecap="round" style="filter: drop-shadow(0 0 8px #fcd34d); stroke-dasharray: 200; stroke-dashoffset: 200;"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- 5. Casino (Mines) -->
+    <div id="casinoGamePage" class="page p-4 pt-6">
+        <div class="flex items-center justify-between mb-8">
+            <i class="fa-solid fa-arrow-left text-gray-800 text-xl btn-press cursor-pointer bg-white w-10 h-10 flex items-center justify-center rounded-full shadow-sm border border-gray-200" onclick="playSound('click'); stopBGM(); navigateTo('homePage');"></i>
+            <h2 class="text-xl font-black text-[#f05a28] uppercase tracking-widest drop-shadow-sm">MINES VAULT</h2>
+            <div class="w-10"></div>
+        </div>
+
+        <div class="glass-card p-6 mb-8 border-t-4 border-[#f05a28]">
+            <div class="flex gap-3 mb-5">
+                <div class="relative w-3/5"><span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-black">₹</span><input type="number" id="mineBet" placeholder="Bet Amt" class="w-full p-4 pl-8 bg-gray-50 text-gray-900 rounded-xl outline-none font-black tracking-wider border border-gray-200 focus:border-[#f05a28]"></div>
+                <select id="mineCount" class="w-2/5 p-4 bg-gray-50 text-gray-900 rounded-xl outline-none font-black tracking-wider border border-gray-200 focus:border-[#f05a28]"><option value="3">3 Mines</option><option value="5">5 Mines</option><option value="10">10 Mines</option></select>
+            </div>
+            <button id="startMineBtn" onclick="playSound('click'); startMinesGame();" class="w-full py-4 fire-btn text-white font-black text-lg rounded-xl btn-press uppercase tracking-widest shadow-md" data-i18n="play_now">PLAY NOW</button>
+            <div class="flex justify-between items-center px-5 py-4 mt-5 font-bold bg-gray-50 rounded-xl border border-gray-200 shadow-sm"><div><p class="text-gray-500 text-[9px] uppercase tracking-widest mb-1">Multiplier</p><p id="mineMultiplier" class="text-[#f05a28] text-2xl font-black">1.00x</p></div><div class="text-right"><p class="text-gray-500 text-[9px] uppercase tracking-widest mb-1">Profit</p><p class="text-green-600 text-2xl font-black">₹<span id="mineProfit">0.00</span></p></div></div>
+            <button id="cashoutBtn" onclick="playSound('click'); cashoutMines();" class="w-full py-4 bg-gradient-to-r from-emerald-400 to-green-600 text-white font-black text-lg rounded-xl btn-press mt-5 hidden uppercase tracking-widest shadow-md" data-i18n="cashout">Cashout Safe</button>
+        </div>
+        <div id="minesGrid" class="mines-grid glass-card p-5 bg-white shadow-inner border border-gray-100"></div>
+    </div>
+
+    <!-- 6. Wallet Page (NEW DEPOSIT/WITHDRAW UI) -->
+    <div id="walletPage" class="page p-4 pt-6">
+        <div class="glass-card p-8 text-center mb-8 border-b-4 border-[#f5a623] relative overflow-hidden fire-btn">
+            <i class="fa-solid fa-wallet absolute -right-4 -top-4 text-9xl opacity-10 text-white"></i>
+            <p class="text-[10px] font-black uppercase tracking-[0.3em] text-white opacity-90 mb-3 relative z-10" data-i18n="total_funds">TOTAL FUNDS</p>
+            <h2 class="text-6xl font-black text-white drop-shadow-md relative z-10">₹<span class="u-bal">0.00</span></h2>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <button onclick="showDepositModal()" class="py-6 glass-card text-gray-800 font-bold btn-press flex flex-col items-center hover:bg-gray-50 border border-gray-200"><div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3"><i class="fa-solid fa-arrow-down text-2xl text-green-500 drop-shadow-sm"></i></div> <span class="uppercase tracking-widest text-[10px] font-black" data-i18n="deposit">Deposit</span></button>
+            <button onclick="showWithdrawModal()" class="py-6 glass-card text-gray-800 font-bold btn-press flex flex-col items-center hover:bg-gray-50 border border-gray-200"><div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-3"><i class="fa-solid fa-arrow-up text-2xl text-red-500 drop-shadow-sm"></i></div> <span class="uppercase tracking-widest text-[10px] font-black" data-i18n="withdraw">Withdraw</span></button>
+        </div>
+        <h3 class="text-[10px] font-black text-gray-500 mb-4 uppercase tracking-[0.2em]"><i class="fa-solid fa-list-ul"></i> <span data-i18n="history">Transaction Logs</span></h3>
+        <div id="txnHistory" class="flex flex-col gap-3 max-h-60 overflow-y-auto pr-1 pb-5"></div>
+    </div>
+
+    <!-- 7. REWARDS HUB -->
+    <div id="adsRewardPage" class="page p-4 pt-6">
+        <div class="flex items-center gap-4 mb-6">
+            <i class="fa-solid fa-arrow-left text-gray-800 text-xl btn-press cursor-pointer bg-white w-10 h-10 flex items-center justify-center rounded-full shadow-sm border border-gray-200" onclick="playSound('click'); navigateTo('profilePage');"></i>
+            <h2 class="text-xl font-black text-[#f05a28] uppercase tracking-widest" data-i18n="watch_earn">Rewards Hub</h2>
+        </div>
+        
+        <div class="glass-card p-6 text-center border border-gray-200 mb-6">
+            <div class="w-16 h-16 mx-auto bg-rose-100 rounded-full flex items-center justify-center mb-4 border border-rose-200"><i class="fa-brands fa-youtube text-3xl text-rose-500 drop-shadow-sm"></i></div>
+            <h3 class="text-xl font-black text-gray-900 mb-1 tracking-wide">Video Rewards</h3>
+            <p class="text-[10px] text-gray-500 font-bold mb-5 uppercase tracking-widest">Watch 15 videos = ₹5</p>
+            <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-200">
+                <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-2"><div id="adProgressBar" class="fire-btn h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
+                <p class="font-black text-xl text-gray-900"><span id="adsCount" class="text-[#f05a28]">0</span><span class="text-xs text-gray-500">/15</span></p>
+            </div>
+            <button id="watchAdBtn" onclick="watchAdVideo()" class="w-full py-4 fire-btn text-white font-black text-sm rounded-xl btn-press uppercase tracking-widest shadow-md">PLAY VIDEO</button>
+        </div>
+
+        <div class="glass-card p-6 text-center border border-gray-200 mb-6">
+            <h3 class="text-xl font-black text-gray-900 mb-1 tracking-wide">Lucky Spin</h3>
+            <p class="text-[10px] text-gray-500 font-bold mb-4 uppercase tracking-widest">Win up to ₹100</p>
+            <p class="text-[10px] text-amber-600 font-black uppercase mb-6 bg-yellow-50 inline-block px-3 py-1 rounded-full border border-yellow-200">Spins Left: <span id="spinLeftCount">10</span>/10</p>
+            
+            <div class="wheel-outer">
+                <div class="wheel-pointer"></div>
+                <div class="wheel-inner" id="spinWheel">
+                    <div class="slice-text st-1">+100<br><i class="fa-solid fa-coins text-yellow-200 mt-1 drop-shadow-md text-lg"></i></div>
+                    <div class="slice-text st-2">+0.10<br><i class="fa-solid fa-coins text-yellow-200 mt-1 drop-shadow-md text-lg"></i></div>
+                    <div class="slice-text st-3">+5<br><i class="fa-solid fa-coins text-yellow-200 mt-1 drop-shadow-md text-lg"></i></div>
+                    <div class="slice-text st-4">+0.50<br><i class="fa-solid fa-coins text-yellow-200 mt-1 drop-shadow-md text-lg"></i></div>
+                    <div class="slice-text st-5">+50<br><i class="fa-solid fa-coins text-yellow-200 mt-1 drop-shadow-md text-lg"></i></div>
+                    <div class="slice-text st-6">+1<br><i class="fa-solid fa-coins text-yellow-200 mt-1 drop-shadow-md text-lg"></i></div>
+                    <div class="slice-text st-7">+10<br><i class="fa-solid fa-coins text-yellow-200 mt-1 drop-shadow-md text-lg"></i></div>
+                    <div class="slice-text st-8">+2<br><i class="fa-solid fa-coins text-yellow-200 mt-1 drop-shadow-md text-lg"></i></div>
+                </div>
+                <div class="wheel-center-btn" id="spinBtn" onclick="initSpinWheel()">SPIN</div>
+            </div>
+        </div>
+
+        <div class="glass-card p-6 text-center border border-gray-200 mb-6">
+            <div class="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4 border border-emerald-200"><i class="fa-solid fa-money-bill-wave text-3xl text-emerald-500 drop-shadow-sm"></i></div>
+            <h3 class="text-xl font-black text-gray-900 mb-1 tracking-wide">Scratch & Win</h3>
+            <p class="text-[10px] text-gray-500 font-bold mb-4 uppercase tracking-widest">Scratch cards daily</p>
+            <p class="text-[10px] text-emerald-600 font-black uppercase mb-4 bg-green-50 inline-block px-3 py-1 rounded-full border border-green-200">Cards Left: <span id="scratchLeftCount">5</span>/5</p>
+            
+            <div class="scratch-container" id="scratchContainer">
+                <div class="scratch-prize" id="scratchPrizeText">₹0.00</div>
+                <canvas id="scratchCanvas"></canvas>
+            </div>
+            <button id="nextScratchBtn" onclick="initScratchCard()" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-black text-sm rounded-xl btn-press uppercase tracking-widest mt-4 hidden shadow-md">NEXT CARD</button>
+        </div>
+    </div>
+
+    <!-- 8. Profile Page (FLAT SVG CROWN, WINGS & CAMERA BUTTON) -->
+    <div id="profilePage" class="page p-4 pt-6">
+        <h2 class="text-2xl font-black text-gray-900 mb-8 uppercase tracking-widest text-center flex justify-center items-center gap-3" data-i18n="profile">Operator Profile</h2>
+        
+        <div class="flex justify-center mb-8">
+            <div class="glass-card p-1.5 rounded-full border border-gray-200 flex shadow-inner bg-gray-50">
+                <button id="langEnBtn" onclick="playSound('click'); setLanguage('en')" class="px-8 py-2.5 rounded-full font-black text-xs fire-btn text-white uppercase tracking-widest shadow-md">ENG</button>
+                <button id="langHiBtn" onclick="playSound('click'); setLanguage('hi')" class="px-8 py-2.5 rounded-full font-black text-xs text-gray-500 uppercase tracking-widest hover:text-gray-900 transition">HIN</button>
+            </div>
+        </div>
+
+        <div class="glass-card p-8 text-center mb-6 relative overflow-visible border-t-4 border-[#f05a28] mt-10">
+            <div class="relative w-28 h-28 mx-auto mb-2 flex justify-center items-center">
+                <div class="absolute w-32 h-32 bg-[#FFB703] rounded-full blur-xl opacity-40 z-0"></div>
+
+                <div class="absolute z-0 pointer-events-none" style="left: -48px; top: 32px;">
+                    <svg width="60" height="50" viewBox="0 0 100 100" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1));">
+                        <path d="M80 20 C 30 0 0 30 0 30 C 0 30 30 30 60 40 C 20 45 5 70 5 70 C 5 70 30 60 60 60 C 30 80 15 100 15 100 C 15 100 40 90 90 60 C 100 50 100 30 80 20 Z" fill="#FFC107"/>
+                    </svg>
+                </div>
+                <div class="absolute z-0 pointer-events-none" style="right: -48px; top: 32px; transform: scaleX(-1);">
+                    <svg width="60" height="50" viewBox="0 0 100 100" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1));">
+                        <path d="M80 20 C 30 0 0 30 0 30 C 0 30 30 30 60 40 C 20 45 5 70 5 70 C 5 70 30 60 60 60 C 30 80 15 100 15 100 C 15 100 40 90 90 60 C 100 50 100 30 80 20 Z" fill="#FFC107"/>
+                    </svg>
+                </div>
+                <div class="absolute z-30 pointer-events-none" style="top: -24px; left: 50%; transform: translateX(-50%);">
+                    <svg width="45" height="35" viewBox="0 0 100 100" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1));">
+                        <path d="M10 90 L90 90 L95 40 L70 60 L50 20 L30 60 L5 40 Z" fill="#FFC107"/>
+                        <circle cx="5" cy="35" r="8" fill="#FFC107"/>
+                        <circle cx="50" cy="12" r="9" fill="#FFC107"/>
+                        <circle cx="95" cy="35" r="8" fill="#FFC107"/>
+                    </svg>
+                </div>
+
+                <img id="profileImg" src="" class="w-full h-full rounded-full border-[4px] border-white shadow-md object-cover bg-[#f05a28] relative z-10">
+
+                <label for="profileUpload" class="absolute bottom-0 right-0 bg-[#f05a28] w-[30px] h-[30px] rounded-full border-[3px] border-white flex items-center justify-center cursor-pointer z-30 shadow-md active:scale-95 transition-transform">
+                    <i class="fa-solid fa-camera text-white text-[11px]"></i>
+                </label>
+                <input type="file" id="profileUpload" accept="image/*" class="hidden" onchange="uploadProfileImage(event)">
+            </div>
+
+            <div class="mb-4 relative z-10 mt-3">
+                <span class="bg-gradient-to-r from-blue-300 to-purple-400 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm"><i class="fa-solid fa-gem mr-1"></i> VIP DIAMOND</span>
+            </div>
+
+            <h3 class="text-2xl font-black text-gray-900 u-name relative z-10 tracking-widest uppercase">Loading...</h3>
+            <p class="text-[10px] text-gray-500 font-bold mt-1 u-email relative z-10 tracking-widest uppercase">loading@email.com</p>
+        </div>
+
+        <div class="glass-card p-6 mb-6 border border-gray-200 bg-gray-50">
+            <h4 class="font-black text-gray-600 mb-3 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em]"><i class="fa-solid fa-share-nodes text-green-500"></i> <span data-i18n="refer">Referral (₹10)</span></h4>
+            <div class="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-gray-200 shadow-sm">
+                <input type="text" id="myReferralCode" readonly class="bg-transparent w-full text-center font-mono font-black text-lg outline-none text-[#f05a28] tracking-widest">
+                <button onclick="playSound('click'); copyReferral();" class="bg-gray-800 text-white px-6 py-3 rounded-lg text-xs font-black btn-press hover:bg-gray-900 transition-colors uppercase tracking-widest shadow-md" data-i18n="copy">COPY</button>
+            </div>
+        </div>
+        <div class="glass-card overflow-hidden flex flex-col border border-gray-200">
+            <button onclick="playSound('click'); navigateTo('adsRewardPage');" class="p-5 text-left font-black text-gray-700 hover:bg-gray-50 border-b border-gray-100 flex items-center gap-4 text-xs uppercase tracking-widest transition-colors"><div class="w-10 h-10 rounded-lg bg-rose-100 flex items-center justify-center border border-rose-200"><i class="fa-solid fa-play text-rose-500 text-lg"></i></div> Daily Rewards Hub</button>
+            <button onclick="openSupport()" class="p-5 text-left font-black text-gray-700 hover:bg-gray-50 border-b border-gray-100 flex items-center gap-4 text-xs uppercase tracking-widest transition-colors"><div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center border border-green-200"><i class="fa-brands fa-whatsapp text-green-500 text-2xl"></i></div> <span data-i18n="support">WhatsApp Support</span></button>
+            <button onclick="playSound('click'); auth.sendPasswordResetEmail(userData.email).then(()=>showToast('Reset email sent!')).catch(e=>showToast(e.message,'error'))" class="p-5 text-left font-black text-gray-700 hover:bg-gray-50 border-b border-gray-100 flex items-center gap-4 text-xs uppercase tracking-widest transition-colors"><div class="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center border border-yellow-200"><i class="fa-solid fa-key text-yellow-500 text-lg"></i></div> <span data-i18n="reset_pass">Reset Auth Key</span></button>
+            <button onclick="playSound('click'); logoutUser();" class="p-5 text-left font-black text-red-500 hover:bg-red-50 flex items-center gap-4 text-xs uppercase tracking-widest transition-colors"><div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center border border-red-200"><i class="fa-solid fa-power-off text-lg"></i></div> <span data-i18n="disconnect">Disconnect</span></button>
+        </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div id="bottomNav" class="fixed bottom-0 left-0 w-full z-50 hidden pb-safe">
+        <div class="flex justify-around items-center px-2 py-4 w-full h-full" style="background: var(--fire-grad); border-radius: 24px 24px 0 0; box-shadow: 0 -5px 25px rgba(217, 36, 27, 0.4);">
+            <div class="nav-item flex flex-col items-center w-14 btn-press" onclick="playSound('click'); navigateTo('homePage');"><i class="fa-solid fa-gamepad text-2xl mb-1.5 drop-shadow-md"></i><span class="text-[9px] font-bold uppercase tracking-widest" data-i18n="home">Home</span></div>
+            <div class="nav-item flex flex-col items-center w-14 btn-press" onclick="playSound('click'); navigateTo('casinoGamePage');"><i class="fa-solid fa-gem text-2xl mb-1.5 drop-shadow-md"></i><span class="text-[9px] font-bold uppercase tracking-widest" data-i18n="mines">Mines</span></div>
+            <div class="nav-item flex flex-col items-center w-14 btn-press" onclick="playSound('click'); navigateTo('tournamentPage');"><i class="fa-solid fa-trophy text-2xl mb-1.5 drop-shadow-md"></i><span class="text-[9px] font-bold uppercase tracking-widest" data-i18n="matches">Matches</span></div>
+            <div class="nav-item flex flex-col items-center w-14 btn-press" onclick="playSound('click'); navigateTo('walletPage');"><i class="fa-solid fa-wallet text-2xl mb-1.5 drop-shadow-md"></i><span class="text-[9px] font-bold uppercase tracking-widest" data-i18n="wallet">Wallet</span></div>
+            <div class="nav-item flex flex-col items-center w-14 btn-press" onclick="playSound('click'); navigateTo('profilePage');"><i class="fa-solid fa-user-astronaut text-2xl mb-1.5 drop-shadow-md"></i><span class="text-[9px] font-bold uppercase tracking-widest" data-i18n="profile">Profile</span></div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="actionModal" class="fixed inset-0 bg-gray-900/80 z-[10000] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="glass-card p-6 w-full max-w-sm relative border-t-4 border-[#f05a28] shadow-[0_10px_40px_rgba(0,0,0,0.2)] max-h-[90vh] overflow-y-auto">
+            <i class="fa-solid fa-times absolute top-5 right-5 text-gray-400 text-xl btn-press cursor-pointer hover:text-gray-900 transition" onclick="playSound('click'); closeModal();"></i>
+            <h2 id="modalTitle" class="text-lg font-black text-[#f05a28] mb-4 uppercase tracking-widest border-b border-gray-200 pb-3">Action</h2>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+<script>
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    const $ = id => document.getElementById(id);
+    
+    // 🔥 FIREBASE CONFIGURATION 🔥
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzGeNzf9xORztLHYBU6kWvQU47al64Jb0",
+      authDomain: "mdkhursheed07-8d355.firebaseapp.com",
+      databaseURL: "https://mdkhursheed07-8d355-default-rtdb.firebaseio.com",
+      projectId: "mdkhursheed07-8d355",
+      storageBucket: "mdkhursheed07-8d355.firebasestorage.app",
+      messagingSenderId: "7768772598",
+      appId: "1:7768772598:web:ae3c5a2bbcdccacbf081d7"
+    };
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    const auth = firebase.auth(); const db = firebase.database();
+    
+    let currentUser = null; let userData = { username: 'Player', email: '', wallet_balance: 0, photo_url: '', referral_code: '' };
+    
+    let adminSettings = { spin_ads: false, scratch_ads: false, ad_code: '' };
+    let adminUPI = "admin@upi", adminQR = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=admin@upi&pn=ArenaVault";
+    
+    db.ref('admin_settings').on('value', snap => { 
+        if(snap.exists()){ 
+            const d = snap.val(); adminSettings = d; 
+            if(d.upi_id) adminUPI = d.upi_id; 
+            if(d.qr_url) adminQR = d.qr_url;
+            
+            // Home Page Top Banner Ad Execution
+            if(d.ad_code && d.ad_code.trim() !== '') {
+                const adContainer = $('homeBannerAdContainer');
+                if(adContainer) {
+                    adContainer.innerHTML = `<iframe srcdoc="${d.ad_code.replace(/"/g, '&quot;')}" style="width:100%; height:100%; border:none; overflow:hidden; background:#fff;" scrolling="no"></iframe>`;
+                }
+            }
+        }
+    });
+
+    const sfx = { click: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'), win: new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'), lose: new Audio('https://assets.mixkit.co/active_storage/sfx/3148/3148-preview.mp3'), boom: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'), cashout: new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3') };
+    let bgm = new Audio('https://www.soundjay.com/free-music/funny-bit-1.mp3'); bgm.loop = true; bgm.volume = 0.4;
+    function playSound(type) { try { sfx[type].currentTime = 0; sfx[type].play().catch(e=>{}); } catch(e){} }
+    function playBGM() { try { bgm.play().catch(e=>{}); } catch(e){} }
+    function stopBGM() { try { bgm.pause(); bgm.currentTime = 0; } catch(e){} }
+
+    const dict = {
+        en: { login_btn: "LOGIN NOW", new_player: "New Player?", create_acc: "Create Account", signup_bonus: "Create account & get ₹10", signup_btn: "SIGN UP", already_reg: "Already registered?", login_now: "Login", welcome: "WELCOME BACK,", wallet: "WALLET", top_games: "TOP GAMES", hot_matches: "HOT TOURNAMENTS", select_level: "SELECT LEVEL", vs_bot: "PLAY BOT", vs_player: "MULTIPLAYER", play_now: "PLAY NOW", cashout: "Cashout Safe", total_funds: "TOTAL FUNDS", deposit: "Deposit", withdraw: "Withdraw", history: "Transaction Logs", watch_earn: "Rewards Hub", free_cash: "Daily Rewards", watch_desc: "Watch 15 videos. Get ₹5 Reward.", progress: "Daily Progress", play_video: "PLAY VIDEO", profile: "Operator Profile", refer: "Referral (₹10)", copy: "COPY", earn_free: "Earn Free ₹5/Ad", support: "WhatsApp Support", reset_pass: "Reset Auth Key", disconnect: "Disconnect", home: "Home", mines: "Mines", matches: "Matches" },
+        hi: { login_btn: "लॉगिन करें", new_player: "नए खिलाड़ी?", create_acc: "खाता बनाएं", signup_bonus: "खाता बनाएं और ₹10 पाएं", signup_btn: "साइन अप करें", already_reg: "पहले से खाता है?", login_now: "लॉगिन करें", welcome: "वापसी पर स्वागत है,", wallet: "वॉलेट", top_games: "टॉप गेम्स", hot_matches: "खास टूर्नामेंट्स", select_level: "लेवल चुनें", vs_bot: "कंप्यूटर से खेलें", vs_player: "दोस्त के साथ खेलें", play_now: "अभी खेलें", cashout: "सुरक्षित निकालें", total_funds: "कुल बैलेंस", deposit: "पैसे डालें", withdraw: "पैसे निकालें", history: "लेनदेन का इतिहास", watch_earn: "इनाम घर", free_cash: "रोज़ाना इनाम", watch_desc: "15 वीडियो देखें। ₹5 पाएं।", progress: "आज की प्रगति", play_video: "अभी वीडियो देखें", profile: "प्रोफाइल", refer: "रेफर करें (₹10)", copy: "कॉपी करें", earn_free: "मुफ्त ₹5 कमाएं", support: "व्हाट्सएप सपोर्ट", reset_pass: "पासवर्ड बदलें", disconnect: "लॉगआउट करें", home: "होम", mines: "कैसिनो", matches: "मैच" }
+    };
+    let currentLang = localStorage.getItem('appLang') || 'en';
+    function setLanguage(lang) {
+        currentLang = lang; localStorage.setItem('appLang', lang);
+        $('langEnBtn').className = lang === 'en' ? "px-8 py-2.5 rounded-full font-black text-xs fire-btn text-white uppercase tracking-widest shadow-md" : "px-8 py-2.5 rounded-full font-black text-xs text-gray-500 uppercase tracking-widest hover:text-gray-900 transition";
+        $('langHiBtn').className = lang === 'hi' ? "px-8 py-2.5 rounded-full font-black text-xs fire-btn text-white uppercase tracking-widest shadow-md" : "px-8 py-2.5 rounded-full font-black text-xs text-gray-500 uppercase tracking-widest hover:text-gray-900 transition";
+        document.querySelectorAll('[data-i18n]').forEach(el => { if(dict[lang][el.getAttribute('data-i18n')]) el.innerHTML = dict[lang][el.getAttribute('data-i18n')]; });
+    }
+
+    function showToast(msg, type = 'success') {
+        const t = $('toast'); t.innerHTML = type==='success' ? `<i class="fa-solid fa-check text-green-400 mr-2 text-lg"></i> ${msg}` : `<i class="fa-solid fa-triangle-exclamation text-red-400 mr-2 text-lg"></i> ${msg}`;
+        t.style.borderColor = type==='success' ? '#10b981' : '#ef4444'; t.style.opacity = '1'; t.style.transform = 'translate(-50%, 10px)'; setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translate(-50%, -10px)'; }, 3000);
+    }
+    function generateId() { return Math.random().toString(36).substr(2, 9); }
+    
+    function navigateTo(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); $(pageId).classList.add('active'); window.scrollTo(0, 0);
+        if(pageId !== 'casinoGamePage' && pageId !== 'tttBoardPage') stopBGM();
+        if (pageId !== 'loginPage' && pageId !== 'adsRewardPage' && pageId !== 'tttMenuPage' && pageId !== 'tttBoardPage') {
+            $('bottomNav').classList.remove('hidden'); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
+            const map = { homePage:0, casinoGamePage:1, tournamentPage:2, walletPage:3, profilePage:4 };
+            if(map[pageId] !== undefined) document.querySelectorAll('.nav-item')[map[pageId]].classList.add('nav-active');
+            loadPageContent(pageId);
+        } else { $('bottomNav').classList.add('hidden'); }
+    }
+
+    auth.onAuthStateChanged(async user => {
+        setLanguage(currentLang);
+        if (user) { currentUser = user; const s = await db.ref(`users/${user.uid}`).once('value'); if(s.exists()) { userData = s.val(); updateGlobalUI(); }
+            db.ref(`users/${user.uid}`).on('value', snap => { if(snap.exists()) { userData = snap.val(); updateGlobalUI(); } });
+            $('globalLoader').style.display = 'none'; navigateTo('homePage'); 
+        } else { currentUser = null; $('globalLoader').style.display = 'none'; navigateTo('loginPage'); }
+    });
+
+    function updateGlobalUI() {
+        if(!userData) return;
+        document.querySelectorAll('.u-name').forEach(e => e.innerText = userData.username || 'Player');
+        document.querySelectorAll('.u-email').forEach(e => e.innerText = userData.email || '');
+        document.querySelectorAll('.u-bal').forEach(e => e.innerText = parseFloat(userData.wallet_balance || 0).toFixed(2));
+        if($('myReferralCode')) $('myReferralCode').value = userData.referral_code || '';
+        if($('profileImg')) $('profileImg').src = userData.photo_url || `https://ui-avatars.com/api/?name=${userData.username||'P'}&background=f05a28&color=fff&bold=true`;
+    }
+
+    async function uploadProfileImage(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        if (file.size > 1024 * 1024) return showToast('Image too large! Max 1MB allowed.', 'error');
+        $('globalLoader').style.display = 'flex';
+        try {
+            const base64Img = await getBase64Image(file);
+            await db.ref(`users/${currentUser.uid}/photo_url`).set(base64Img);
+            $('profileImg').src = base64Img; playSound('win'); showToast('Profile photo updated!', 'success');
+        } catch (err) { showToast('Failed to update photo', 'error'); }
+        $('globalLoader').style.display = 'none';
+    }
+
+    let isLogin = true;
+    function toggleAuthMode() { playSound('click'); isLogin = !isLogin; $('loginForm').style.display = isLogin ? 'block' : 'none'; $('signupForm').style.display = isLogin ? 'none' : 'block'; }
+    
+    async function loginUser() {
+        playSound('click'); const e = $('loginEmail').value, p = $('loginPassword').value; if(!e||!p) return showToast('Input required data', 'error');
+        $('globalLoader').style.display = 'flex'; try { await auth.signInWithEmailAndPassword(e, p); } catch(err) { $('globalLoader').style.display = 'none'; showToast('Auth Failed', 'error'); }
+    }
+
+    async function signupUser() {
+        playSound('click'); const u = $('signupUser').value.trim(), e = $('signupEmail').value.trim(), p = $('signupPassword').value, ref = $('signupReferral').value.trim();
+        if(!u||!e||!p) return showToast('Missing inputs', 'error');
+        $('globalLoader').style.display = 'flex';
+        try {
+            const cred = await auth.createUserWithEmailAndPassword(e, p); const uid = cred.user.uid; const refCode = u.substring(0,4).toUpperCase() + Math.floor(1000+Math.random()*9000);
+            await db.ref(`users/${uid}`).set({ username: u, email: e, photo_url: `https://ui-avatars.com/api/?name=${u}&background=f05a28&color=fff&bold=true`, wallet_balance: 10, referral_code: refCode, created_at: Date.now() });
+            await db.ref(`transactions/${uid}/${generateId()}`).set({ amount: 10, type: 'credit', description: 'Welcome Bonus (+₹10)', created_at: Date.now() });
+            if(ref) {
+                db.ref('users').orderByChild('referral_code').equalTo(ref).once('value', snap => {
+                    if(snap.exists()) { const refUid = Object.keys(snap.val())[0];
+                        db.ref(`users/${refUid}/wallet_balance`).once('value', b => { db.ref(`users/${refUid}/wallet_balance`).set(parseFloat(b.val()||0)+10); db.ref(`transactions/${refUid}/${generateId()}`).set({ amount:10, type:'credit', description:`Referral Bonus`, created_at:Date.now() }); });
+                    }
+                });
+            }
+        } catch(err) { $('globalLoader').style.display = 'none'; showToast(err.message, 'error'); }
+    }
+
+    function logoutUser() { if(confirm('Disconnect?')) auth.signOut(); }
+    
+    function openSupport() {
+        playSound('click');
+        if (adminSettings && adminSettings.support_link && adminSettings.support_link.trim() !== '') window.open(adminSettings.support_link, '_blank');
+        else showToast('Support link not set by Admin!', 'error');
+    }
+
+    function loadPageContent(pageId) { if(pageId === 'homePage') loadHome(); else if(pageId === 'walletPage') loadWallet(); else if(pageId === 'tournamentPage') loadTournaments('Upcoming'); else if(pageId === 'casinoGamePage') if(!minesState.playing) resetMinesGame(); else if(pageId === 'adsRewardPage') { loadAdsPage(); renderSpinWheel(); setupScratchCard(false); } }
+
+    function loadHome() {
+        db.ref('tournaments').orderByChild('status').equalTo('Upcoming').limitToLast(2).once('value', snap => {
+            $('homeTournaments').innerHTML = '';
+            if(snap.exists()){
+                Object.values(snap.val()).forEach(t => {
+                    $('homeTournaments').innerHTML += `<div class="glass-card p-5 flex justify-between items-center bg-gray-50 border border-gray-200">
+                        <div><p class="font-black text-gray-900 text-lg mb-1 tracking-wide">${t.title}</p><p class="text-[9px] font-black text-gray-500 uppercase tracking-widest">FEE: <span class="text-[#f05a28]">₹${t.entry_fee}</span> &bull; WIN: <span class="text-green-600">₹${t.prize_pool}</span></p></div>
+                        <button onclick="playSound('click'); navigateTo('tournamentPage');" class="fire-btn text-white px-6 py-2.5 rounded-xl text-[10px] font-black btn-press uppercase tracking-widest shadow-md">JOIN</button>
+                    </div>`;
+                });
+            }
+        });
+    }
+
+    function loadTournaments(status) {
+        db.ref('tournaments').orderByChild('status').equalTo(status).once('value', snap => {
+            $('tournamentList').innerHTML = '';
+            if(snap.exists()) {
+                Object.entries(snap.val()).forEach(([id, t]) => {
+                    const filled = t.joined_count || 0; const total = t.total_spots || 48; const perc = Math.min((filled/total)*100, 100); const isFull = filled >= total;
+                    $('tournamentList').innerHTML += `<div class="glass-card overflow-hidden mb-6 border border-gray-200 bg-white">
+                        <div class="relative"><img src="${t.image_url || 'https://via.placeholder.com/400x150/f8fafc/000000?text=ARENA+MATCH'}" class="w-full h-44 object-cover border-b border-gray-200"><span class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-[#f05a28] px-3 py-1.5 rounded text-[9px] font-black tracking-[0.2em] uppercase border border-[#f05a28] shadow-sm">${t.game_name}</span></div>
+                        <div class="p-5"><h3 class="font-black text-xl text-gray-900 mb-1 tracking-wide">${t.title}</h3><p class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-5"><i class="fa-regular fa-clock text-[#f05a28] mr-1"></i> ${new Date(t.match_time).toLocaleString()}</p>
+                            <div class="grid grid-cols-3 gap-2 text-center text-xs mb-5"><div class="bg-gray-50 p-3 rounded-xl border border-gray-200"><p class="text-gray-500 font-bold mb-1 text-[8px] uppercase tracking-widest">Prize Pool</p><p class="font-black text-green-600 text-sm">₹${t.prize_pool}</p></div><div class="bg-gray-50 p-3 rounded-xl border border-gray-200"><p class="text-gray-500 font-bold mb-1 text-[8px] uppercase tracking-widest">Per Kill</p><p class="font-black text-amber-500 text-sm">₹${t.per_kill || 0}</p></div><div class="bg-gray-50 p-3 rounded-xl border border-gray-200"><p class="text-gray-500 font-bold mb-1 text-[8px] uppercase tracking-widest">Entry Fee</p><p class="font-black text-rose-500 text-sm">₹${t.entry_fee}</p></div></div>
+                            <div class="flex justify-between items-center gap-4 mt-2 bg-gray-50 p-4 rounded-xl border border-gray-200"><div class="flex-1"><div class="flex justify-between text-[9px] text-gray-500 mb-2 font-bold uppercase tracking-widest"><span>${Math.max(0, total-filled)} spots left</span> <span class="text-[#f05a28]">${filled}/${total}</span></div><div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden"><div class="fire-btn h-full rounded-full" style="width: ${perc}%"></div></div></div>
+                            ${status==='Upcoming' ? `<button id="joinBtn_${id}" onclick="playSound('click'); joinTournament('${id}', ${t.entry_fee}, ${isFull});" class="fire-btn text-white px-8 py-3 rounded-xl font-black text-[10px] btn-press uppercase tracking-widest shadow-md ${isFull?'opacity-50':''}">${isFull?'FULL':'JOIN'}</button>` : ''}</div>
+                            <div id="t_info_${id}" class="text-[10px] p-4 bg-green-50 text-green-600 rounded-xl mt-4 hidden font-black border border-green-200 tracking-widest text-center uppercase"></div></div></div>`;
+                    if(status !== 'Completed') checkParticipation(id, status);
+                });
+            } else { $('tournamentList').innerHTML = `<div class="glass-card p-12 text-center border-dashed border-gray-300 bg-gray-50"><i class="fa-solid fa-satellite-dish text-4xl text-gray-400 mb-4"></i><p class="font-black text-gray-500 text-xs uppercase tracking-widest">NO MATCHES</p></div>`; }
+        });
+    }
+
+    function checkParticipation(tId, status) {
+        db.ref(`participants/${tId}/${currentUser.uid}`).once('value', snap => {
+            if(snap.exists()) {
+                if($(`joinBtn_${tId}`)) { $(`joinBtn_${tId}`).innerText = "JOINED"; $(`joinBtn_${tId}`).disabled = true; $(`joinBtn_${tId}`).className = "bg-gray-200 text-gray-500 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border border-gray-300"; }
+                db.ref(`tournaments/${tId}`).once('value', ts => {
+                    const t = ts.val(); if($(`t_info_${tId}`)){ $(`t_info_${tId}`).classList.remove('hidden');
+                        if(status === 'Upcoming') $(`t_info_${tId}`).innerHTML = `<i class="fa-solid fa-check"></i> Registered! Standby for Room Data.`;
+                        else if(status === 'Live') $(`t_info_${tId}`).innerHTML = `<span class="text-[#f05a28]"><i class="fa-solid fa-unlock mr-1"></i> ROOM DATA DECRYPTED</span><br><div class="flex gap-2 mt-3"><div class="bg-white px-3 py-2 rounded-lg flex-1 border border-[#f05a28] text-center text-gray-900 shadow-sm">ID: <span class="font-mono text-[#f05a28] ml-1">${t.room_id||'Wait'}</span></div><div class="bg-white px-3 py-2 rounded-lg flex-1 border border-[#f05a28] text-center text-gray-900 shadow-sm">PASS: <span class="font-mono text-[#f05a28] ml-1">${t.room_password||'Wait'}</span></div></div>`;
+                    }
+                });
+            }
+        });
+    }
+
+    async function joinTournament(tId, fee, isFull) {
+        if(isFull) return; const bal = parseFloat(userData.wallet_balance || 0); if(bal < fee) return showToast('Insufficient funds!', 'error');
+        if(confirm(`Deduct ₹${fee} to access tournament?`)) {
+            $('globalLoader').style.display = 'flex';
+            try {
+                const tRef = db.ref(`tournaments/${tId}`); await tRef.transaction(t => { if(t) t.joined_count = (t.joined_count || 0) + 1; return t; });
+                await db.ref(`users/${currentUser.uid}/wallet_balance`).set(bal - fee);
+                await db.ref(`transactions/${currentUser.uid}/${generateId()}`).set({ amount: fee, type: 'debit', description: 'Match Entry', created_at: Date.now() });
+                await db.ref(`participants/${tId}/${currentUser.uid}`).set({ username: userData.username, status: 'Participated', score: 0 });
+                playSound('win'); showToast('Access Granted! 🔥', 'success'); loadTournaments('Upcoming');
+            } catch (err) {} $('globalLoader').style.display = 'none';
+        }
+    }
+
+    // --- 🔥 TIC TAC TOE / KATTI BATTI LOGIC (FIXED GLITCHES & WIN LINE) 🔥 ---
+    let tttBoard =['','','','','','','','','']; let tttBet = 0; let tttPlaying = false;
+    
+    function openTTTGame() { navigateTo('tttBoardPage'); resetTTT(); }
+    
+    function resetTTT() {
+        tttBoard =['','','','','','','','','']; tttPlaying = false;
+        for(let i=0; i<9; i++) { $('t'+i).innerHTML = ''; $('t'+i).classList.remove('pointer-events-none'); }
+        
+        $('tttWinSvg').classList.add('hidden'); // Hide Win Line
+        $('tttLine').style.transition = 'none';
+        $('tttLine').style.strokeDashoffset = '200';
+
+        $('tttGridContainer').classList.add('pointer-events-none', 'opacity-50'); 
+        $('startTttBtn').classList.remove('hidden'); $('startTttBtn').disabled = false; $('tttStatus').classList.add('hidden');
+    }
+
+    async function startTTTGame() {
+        playSound('click'); const bet = parseFloat($('tttBetAmount').value);
+        if(isNaN(bet) || bet < 5) return showToast('Min Bet is ₹5', 'error'); if(parseFloat(userData.wallet_balance || 0) < bet) return showToast('Insufficient Balance!', 'error');
+        
+        $('startTttBtn').disabled = true;
+        await db.ref(`users/${currentUser.uid}/wallet_balance`).set(parseFloat(userData.wallet_balance) - bet);
+        await db.ref(`transactions/${currentUser.uid}/${generateId()}`).set({ amount: bet, type: 'debit', description: 'TicTacToe Bet', created_at: Date.now() });
+        
+        tttBet = bet; tttPlaying = true; $('startTttBtn').classList.add('hidden'); 
+        $('tttGridContainer').classList.remove('pointer-events-none', 'opacity-50');
+        $('tttStatus').classList.remove('hidden'); $('tttStatus').innerText = "YOUR TURN (O)"; $('tttStatus').style.color = "#38bdf8"; 
+        playBGM(); showToast('Match Started!', 'success');
+    }
+
+    function checkTTTWin(board) {
+        const combos = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        for(let c of combos) { 
+            if(board[c[0]] !== '' && board[c[0]] === board[c[1]] && board[c[0]] === board[c[2]]) {
+                return { winner: board[c[0]], combo: c };
+            }
+        }
+        if(!board.includes('')) return { winner: 'Tie' }; 
+        return null;
+    }
+
+    function playerMoveTTT(idx) {
+        if(!tttPlaying || tttBoard[idx] !== '') return; playSound('click');
+        tttBoard[idx] = 'O'; $('t'+idx).innerHTML = '<span class="neon-o">O</span>';
+        let r = checkTTTWin(tttBoard); if(r) { handleTTTEnd(r); return; }
+        
+        $('tttGridContainer').classList.add('pointer-events-none'); 
+        $('tttStatus').innerText = "BOT IS THINKING..."; $('tttStatus').style.color = "#f87171"; 
+        setTimeout(botMoveTTT, 800);
+    }
+
+    function botMoveTTT() {
+        if(!tttPlaying) return; playSound('click');
+        let empty =[]; tttBoard.forEach((v, i) => { if(v === '') empty.push(i); }); let m = -1;
+        
+        for(let i of empty) { tttBoard[i] = 'X'; if(checkTTTWin(tttBoard)?.winner === 'X') m = i; tttBoard[i] = ''; }
+        if(m === -1) { for(let i of empty) { tttBoard[i] = 'O'; if(checkTTTWin(tttBoard)?.winner === 'O') m = i; tttBoard[i] = ''; } }
+        if(m === -1 || Math.random() < 0.3) m = empty[Math.floor(Math.random() * empty.length)];
+        if(m === -1) m = empty[0];
+        
+        if(m !== -1 && m !== undefined) {
+            tttBoard[m] = 'X'; $('t'+m).innerHTML = '<span class="neon-x">X</span>';
+        }
+
+        let r = checkTTTWin(tttBoard); if(r) { handleTTTEnd(r); return; }
+        $('tttGridContainer').classList.remove('pointer-events-none'); 
+        $('tttStatus').innerText = "YOUR TURN (O)"; $('tttStatus').style.color = "#38bdf8";
+    }
+
+    function drawTTTLine(combo) {
+        const svg = $('tttWinSvg');
+        const line = $('tttLine');
+        svg.classList.remove('hidden');
+        
+        // Grid Coordinates
+        const coords = {
+            '0,1,2': {x1:5, y1:16.6, x2:95, y2:16.6},
+            '3,4,5': {x1:5, y1:50, x2:95, y2:50},
+            '6,7,8': {x1:5, y1:83.3, x2:95, y2:83.3},
+            '0,3,6': {x1:16.6, y1:5, x2:16.6, y2:95},
+            '1,4,7': {x1:50, y1:5, x2:50, y2:95},
+            '2,5,8': {x1:83.3, y1:5, x2:83.3, y2:95},
+            '0,4,8': {x1:5, y1:5, x2:95, y2:95},
+            '2,4,6': {x1:95, y1:5, x2:5, y2:95}
+        };
+        const c = coords[combo.join(',')];
+        if(c) {
+            line.setAttribute('x1', c.x1); line.setAttribute('y1', c.y1);
+            line.setAttribute('x2', c.x2); line.setAttribute('y2', c.y2);
+            
+            line.getBoundingClientRect(); // Reflow
+            line.style.transition = 'stroke-dashoffset 0.5s ease-out';
+            line.style.strokeDashoffset = '0';
+        }
+    }
+
+    async function handleTTTEnd(r) {
+        tttPlaying = false; stopBGM(); 
+        $('tttGridContainer').classList.add('pointer-events-none'); 
+        
+        if(r.combo) {
+            drawTTTLine(r.combo);
+            await new Promise(res => setTimeout(res, 600)); // wait for animation
+        }
+
+        $('startTttBtn').classList.remove('hidden'); $('startTttBtn').disabled = false; $('startTttBtn').innerText = "PLAY AGAIN";
+        
+        if(r.winner === 'O') {
+            playSound('win'); const win = tttBet * 2; $('tttStatus').innerText = "YOU WON! (+₹" + win + ")"; $('tttStatus').style.color = "#10B981";
+            await db.ref(`users/${currentUser.uid}/wallet_balance`).set(parseFloat(userData.wallet_balance || 0) + win);
+            await db.ref(`transactions/${currentUser.uid}/${generateId()}`).set({ amount: win, type: 'credit', description: 'TicTacToe Win', created_at: Date.now() }); showToast('You Won! 🔥', 'success');
+        } else if (r.winner === 'Tie') {
+            playSound('cashout'); $('tttStatus').innerText = "TIE! BET REFUNDED."; $('tttStatus').style.color = "gray";
+            await db.ref(`users/${currentUser.uid}/wallet_balance`).set(parseFloat(userData.wallet_balance || 0) + tttBet);
+            await db.ref(`transactions/${currentUser.uid}/${generateId()}`).set({ amount: tttBet, type: 'credit', description: 'TicTacToe Refund', created_at: Date.now() }); showToast('It\'s a Tie! Refunded.', 'success');
+        } else { 
+            playSound('lose'); $('tttStatus').innerText = "BOT WINS. YOU LOST."; $('tttStatus').style.color = "#f87171"; showToast('You Lost!', 'error'); 
+        }
+    }
+
+    // --- 🔥 SECURE AD NETWORK PLAY FUNCTION 🔥 ---
+    function playCustomAd(callback) {
+        if(!adminSettings.ad_code || adminSettings.ad_code.trim() === '') {
+            callback(); return; 
+        }
+        
+        $('customAdOverlay').classList.remove('hidden');
+        $('customAdOverlay').classList.add('flex');
+        
+        const container = $('adIframeContainer');
+        container.innerHTML = '';
+        
+        const iframe = document.createElement('iframe');
+        iframe.style.width = '100%'; 
+        iframe.style.height = '100%'; 
+        iframe.style.border = 'none';
+        iframe.sandbox = "allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation";
+        container.appendChild(iframe);
+        
+        const adHTML = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            </head>
+            <body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; height:100vh; background-color:#111827; overflow:hidden;">
+                ${adminSettings.ad_code}
+            </body>
+            </html>
+        `;
+        
+        iframe.contentWindow.document.open();
+        iframe.contentWindow.document.write(adHTML);
+        iframe.contentWindow.document.close();
+
+        let timeLeft = 5; 
+        const skipBtn = $('skipAdBtn');
+        skipBtn.disabled = true;
+        skipBtn.innerText = `Wait ${timeLeft}s...`;
+
+        const timer = setInterval(() => {
+            timeLeft--;
+            if(timeLeft <= 0) {
+                clearInterval(timer);
+                skipBtn.disabled = false;
+                skipBtn.innerHTML = `<i class="fa-solid fa-times"></i> Close Ad`;
+                skipBtn.onclick = () => {
+                    $('customAdOverlay').classList.add('hidden');
+                    $('customAdOverlay').classList.remove('flex');
+                    container.innerHTML = ''; 
+                    callback(); 
+                };
+            } else {
+                skipBtn.innerText = `Wait ${timeLeft}s...`;
+            }
+        }, 1000);
+    }
+    // ---------------------------------------------
+
+    async function getDailyData() {
+        const snap = await db.ref(`daily_rewards/${currentUser.uid}`).once('value');
+        let data = snap.val() || { date: '', ads: 0, spins: 0, scratches: 0 };
+        const today = new Date().toLocaleDateString();
+        if(data.date !== today) { data.date = today; data.ads = 0; data.spins = 0; data.scratches = 0; await db.ref(`daily_rewards/${currentUser.uid}`).set(data); }
+        return data;
+    }
+
+    async function loadAdsPage() {
+        const d = await getDailyData();
+        $('adsCount').innerText = d.ads; $('adProgressBar').style.width = `${(d.ads/15)*100}%`;
+        if(d.ads >= 15) { $('watchAdBtn').disabled = true; $('watchAdBtn').innerText = "QUOTA REACHED"; $('watchAdBtn').className = "w-full py-5 bg-gray-200 text-gray-500 font-black text-sm rounded-xl uppercase tracking-widest border border-gray-300"; }
+        $('spinLeftCount').innerText = 10 - d.spins; $('scratchLeftCount').innerText = 5 - d.scratches;
+    }
+
+    async function watchAdVideo() {
+        playSound('click'); let d = await getDailyData();
+        if(d.ads >= 15) return showToast('Daily quota reached.', 'error');
+        
+        const executeRewardAd = () => {
+            $('watchAdBtn').disabled = true; $('watchAdBtn').innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> LOADING...`;
+            setTimeout(async () => {
+                d.ads++; 
+                if(d.ads === 15) {
+                    await db.ref(`users/${currentUser.uid}/wallet_balance`).set(parseFloat(userData.wallet_balance || 0) + 5);
+                    await db.ref(`transactions/${currentUser.uid}/${generateId()}`).set({ amount: 5, type: 'credit', description: 'Completed 15 Ads (+₹5)', created_at: Date.now() });
+                    playSound('win'); showToast('Completed 15 Ads! ₹5 Added 🔥', 'success');
+                } else { playSound('click'); showToast(`Ad watched! (${d.ads}/15)`, 'success'); }
+                await db.ref(`daily_rewards/${currentUser.uid}`).set(d);
+                $('watchAdBtn').disabled = false; $('watchAdBtn').innerText = "PLAY VIDEO"; loadAdsPage();
+            }, 1000); 
+        };
+
+        if(adminSettings.ad_code && adminSettings.ad_code.trim() !== '') {
+            playCustomAd(executeRewardAd);
+        } else {
+            $('watchAdBtn').innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> LOADING VIDEO...`;
+            setTimeout(executeRewardAd, 4000);
+        }
+    }
+
+    const spinPrizes =[100, 0.10, 5, 0.50, 50, 1, 10, 2];
+    const spinWeights =[0.1, 31.9, 5, 20, 1, 10, 2, 30]; 
+    
+    function renderSpinWheel() {
+        const wheel = $('spinWheel'); wheel.innerHTML = '';
+        const angle = 360 / spinPrizes.length;
+        spinPrizes.forEach((p, i) => {
+            const rot = i * angle;
+            const color = i % 2 === 0 ? '#111' : '#1a0a0a'; 
+            const slice = document.createElement('div');
+            slice.className = 'wheel-slice';
+            slice.style.transform = `rotate(${rot}deg) skewY(${90 - angle}deg)`;
+            slice.style.background = color;
+            const text = document.createElement('span');
+            text.innerText = "₹" + p;
+            text.style.transform = `skewY(${-(90 - angle)}deg) rotate(${angle/2}deg) translate(60px, -20px)`;
+            text.style.position = "absolute";
+            text.style.color = p === 100 ? '#f5a623' : '#fff';
+            slice.appendChild(text); wheel.appendChild(slice);
+        });
+    }
+
+    async function initSpinWheel() {
+        if($('spinBtn').disabled) return;
+        playSound('click'); 
+        let d = await getDailyData();
+        if(d.spins >= 10) return showToast('Limit 10 spins/day reached!', 'error');
+
+        if(adminSettings.spin_ads === true) {
+            playCustomAd(() => { spinTheWheel(d); });
+        } else { spinTheWheel(d); }
+    }
+
+    async function spinTheWheel(d) {
+        $('spinBtn').disabled = true; $('spinBtn').style.opacity = '0.7';
+        
+        let rand = Math.random() * 100; let sum = 0; let winIndex = 0;
+        for(let i=0; i<spinWeights.length; i++) { sum += spinWeights[i]; if(rand <= sum) { winIndex = i; break; } }
+        
+        const winAmt = spinPrizes[winIndex];
+        const targetDeg = (360 * 5) - (winIndex * 45); 
+        
+        $('spinWheel').style.transition = 'transform 4s cubic-bezier(0.1, 2.7, 0.5, 1)';
+        $('spinWheel').style.transform = `rotate(${targetDeg}deg)`;
+        
+        setTimeout(async () => {
+            playSound('win'); showToast(`You won ₹${winAmt}!`, 'success');
+            await db.ref(`users/${currentUser.uid}/wallet_balance`).set(parseFloat(userData.wallet_balance || 0) + winAmt);
+            await db.ref(`transactions/${currentUser.uid}/${generateId()}`).set({ amount: winAmt, type: 'credit', description: 'Spin Wheel Reward', created_at: Date.now() });
+            d.spins++; await db.ref(`daily_rewards/${currentUser.uid}`).set(d);
+            
+            setTimeout(() => {
+                $('spinWheel').style.transition = 'none';
+                $('spinWheel').style.transform = `rotate(${targetDeg % 360}deg)`;
+                $('spinBtn').disabled = false; $('spinBtn').style.opacity = '1'; loadAdsPage();
+            }, 500);
+        }, 4000);
+    }
+
+    let scratchCanvas, ctx, isScratching = false, scratchPrizeAmt = 0, totalPixels = 0, scratchDone = false;
+    
+    async function initScratchCard() {
+        playSound('click');
+        let d = await getDailyData();
+        if(d.scratches >= 5) return showToast('Limit 5 scratches/day reached!', 'error');
+
+        if(adminSettings.scratch_ads === true) {
+            playCustomAd(() => { setupScratchCard(true); });
+        } else { setupScratchCard(true); }
+    }
+
+    async function setupScratchCard(isInitial = true) {
+        let d = await getDailyData();
+        if(d.scratches >= 5) {
+            $('scratchPrizeText').innerText = "LIMIT REACHED"; $('nextScratchBtn').classList.add('hidden');
+            if(scratchCanvas) scratchCanvas.style.display = 'none'; return;
+        }
+        $('nextScratchBtn').classList.add('hidden'); scratchDone = false;
+        scratchPrizeAmt = adminSettings.scratch_amount ? parseFloat(adminSettings.scratch_amount) : (Math.floor(Math.random()*5)+1);
+        $('scratchPrizeText').innerText = "₹" + scratchPrizeAmt;
+
+        scratchCanvas = $('scratchCanvas'); const container = $('scratchContainer');
+        scratchCanvas.width = container.offsetWidth; scratchCanvas.height = container.offsetHeight;
+        totalPixels = scratchCanvas.width * scratchCanvas.height; ctx = scratchCanvas.getContext('2d');
+        
+        ctx.fillStyle = '#CBD5E1'; ctx.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+        ctx.font = 'bold 20px Arial'; ctx.fillStyle = '#64748B'; ctx.textAlign = "center";
+        ctx.fillText("SCRATCH HERE", scratchCanvas.width/2, scratchCanvas.height/2);
+        scratchCanvas.style.display = 'block';
+
+        scratchCanvas.onmousedown = (e) => { isScratching = true; scratch(e); }; scratchCanvas.ontouchstart = (e) => { isScratching = true; scratch(e); };
+        window.onmouseup = () => isScratching = false; window.ontouchend = () => isScratching = false;
+        scratchCanvas.onmousemove = scratch; scratchCanvas.ontouchmove = scratch;
+    }
+
+    async function scratch(e) {
+        if(!isScratching || scratchDone) return;
+        e.preventDefault(); const rect = scratchCanvas.getBoundingClientRect();
+        let x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left, y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+        ctx.globalCompositeOperation = 'destination-out'; ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI * 2); ctx.fill();
+
+        if(Math.random() < 0.1) {
+            const pixels = ctx.getImageData(0,0,scratchCanvas.width,scratchCanvas.height).data; let clearCount = 0;
+            for(let i=3; i<pixels.length; i+=4) { if(pixels[i] === 0) clearCount++; }
+            if(clearCount > totalPixels * 0.5) {
+                scratchDone = true; scratchCanvas.style.display = 'none';
+                playSound('cashout'); showToast(`Scratched ₹${scratchPrizeAmt}!`, 'success'); $('nextScratchBtn').classList.remove('hidden');
+                let d = await getDailyData(); d.scratches++;
+                await db.ref(`users/${currentUser.uid}/wallet_balance`).set(parseFloat(userData.wallet_balance || 0) + scratchPrizeAmt);
+                await db.ref(`transactions/${currentUser.uid}/${generateId()}`).set({ amount: scratchPrizeAmt, type: 'credit', description: 'Scratch Card Win', created_at: Date.now() });
+                await db.ref(`daily_rewards/${currentUser.uid}`).set(d); loadAdsPage();
+            }
+        }
+    }
+
+    function loadWallet() {
+        db.ref(`transactions/${currentUser.uid}`).orderByChild('created_at').once('value', snap => {
+            $('txnHistory').innerHTML = '';
+            if(snap.exists()) {
+                const txns =[]; snap.forEach(c => { txns.push(c.val()); });
+                txns.reverse().forEach(t => {
+                    const isCr = t.type === 'credit';
+                    $('txnHistory').innerHTML += `<div class="glass-card p-4 flex justify-between items-center bg-white border border-gray-200 shadow-sm">
+                        <div class="flex items-center gap-4"><div class="w-10 h-10 rounded-lg flex items-center justify-center ${isCr?'bg-green-100 text-green-600 border border-green-200':'bg-red-100 text-red-500 border border-red-200'} text-sm shadow-inner"><i class="fa-solid ${isCr?'fa-arrow-down':'fa-arrow-up'}"></i></div><div><p class="text-xs font-black text-gray-900 mb-0.5 tracking-wide">${t.description}</p><p class="text-[8px] text-gray-500 font-bold uppercase tracking-[0.2em]">${new Date(t.created_at).toLocaleString()}</p></div></div>
+                        <div class="font-black text-sm ${isCr ? 'text-green-600' : 'text-red-500'} font-mono">${isCr ? '+' : '-'}₹${parseFloat(t.amount).toFixed(2)}</div></div>`;
+                });
+            } else { $('txnHistory').innerHTML = `<div class="glass-card p-8 text-center border-dashed border-gray-300 bg-gray-50"><i class="fa-solid fa-server text-3xl text-gray-400 mb-3"></i><p class="font-black text-gray-500 text-[10px] uppercase tracking-widest">NO LOGS FOUND</p></div>`; }
+        });
+    }
+    
+    function showModal(title, html) { $('modalTitle').innerText = title; $('modalBody').innerHTML = html; $('actionModal').classList.remove('hidden'); }
+    function closeModal() { $('actionModal').classList.add('hidden'); }
+    
+    // --- 🔥 NEW WALLET PAYMENT UI (RAZORPAY PREP & BANK TABS) 🔥 ---
+    function setDepAmt(amt) { $('depAmt').value = amt; playSound('click'); }
+    
+    function showDepositModal() { 
+        playSound('click'); 
+        showModal('Add Funds to Wallet', `
+            <div class="text-center mb-4">
+                <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-3">Select Deposit Amount</p>
+                <div class="grid grid-cols-3 gap-2 mb-3">
+                    <button onclick="setDepAmt(100)" class="bg-white border border-gray-200 text-gray-900 py-2 rounded-lg font-bold btn-press shadow-sm hover:bg-orange-50 hover:border-orange-200 transition">₹100</button>
+                    <button onclick="setDepAmt(200)" class="bg-white border border-gray-200 text-gray-900 py-2 rounded-lg font-bold btn-press shadow-sm hover:bg-orange-50 hover:border-orange-200 transition">₹200</button>
+                    <button onclick="setDepAmt(400)" class="bg-white border border-gray-200 text-gray-900 py-2 rounded-lg font-bold btn-press shadow-sm hover:bg-orange-50 hover:border-orange-200 transition">₹400</button>
+                    <button onclick="setDepAmt(500)" class="bg-white border border-gray-200 text-gray-900 py-2 rounded-lg font-bold btn-press shadow-sm hover:bg-orange-50 hover:border-orange-200 transition">₹500</button>
+                    <button onclick="setDepAmt(1000)" class="col-span-2 bg-white border border-gray-200 text-gray-900 py-2 rounded-lg font-bold btn-press shadow-sm hover:bg-orange-50 hover:border-orange-200 transition">₹1000</button>
+                </div>
+                <input type="number" id="depAmt" placeholder="Custom Amount (Min ₹100)" class="w-full p-3 bg-gray-50 text-gray-900 border border-gray-200 rounded-lg mb-4 outline-none font-bold text-center">
+                
+                <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg flex items-center gap-3 mb-4">
+                    <i class="fa-solid fa-shield-halved text-blue-500 text-2xl"></i>
+                    <p class="text-[9px] text-blue-700 font-bold text-left leading-tight">Pay instantly via PhonePe, GPay, Paytm, or Cards. Secure Razorpay gateway.</p>
+                </div>
+
+                <button onclick="submitReq('deposit')" class="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white font-black text-sm rounded-xl btn-press uppercase tracking-widest shadow-md flex justify-center items-center gap-2"><i class="fa-solid fa-bolt"></i> Pay via Razorpay</button>
+            </div>
+        `); 
+    }
+
+    function setWithAmt(amt) { $('withAmt').value = amt; playSound('click'); }
+    function toggleWithTab(type) {
+        playSound('click');
+        if(type === 'upi') {
+            $('tabUpi').className = "flex-1 py-2 bg-white shadow rounded font-bold text-xs text-gray-900 transition";
+            $('tabBank').className = "flex-1 py-2 rounded font-bold text-xs text-gray-500 transition";
+            $('withUpiDiv').classList.remove('hidden');
+            $('withBankDiv').classList.add('hidden');
+            $('withBankDiv').classList.remove('flex');
+        } else {
+            $('tabBank').className = "flex-1 py-2 bg-white shadow rounded font-bold text-xs text-gray-900 transition";
+            $('tabUpi').className = "flex-1 py-2 rounded font-bold text-xs text-gray-500 transition";
+            $('withBankDiv').classList.remove('hidden');
+            $('withBankDiv').classList.add('flex');
+            $('withUpiDiv').classList.add('hidden');
+        }
+    }
+
+    function showWithdrawModal() { 
+        playSound('click'); 
+        showModal('Withdraw Funds', `
+            <p class="text-[10px] text-red-600 font-black mb-4 text-center bg-red-50 border border-red-200 p-2 rounded-lg uppercase tracking-widest shadow-sm">Min: ₹200 | Limit: 3/Day</p>
+            
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <button onclick="setWithAmt(100)" class="bg-gray-50 border border-gray-200 text-gray-900 py-2 rounded-lg font-bold btn-press shadow-sm hover:bg-orange-100">₹100</button>
+                <button onclick="setWithAmt(200)" class="bg-gray-50 border border-gray-200 text-gray-900 py-2 rounded-lg font-bold btn-press shadow-sm hover:bg-orange-100">₹200</button>
+                <button onclick="setWithAmt(500)" class="bg-gray-50 border border-gray-200 text-gray-900 py-2 rounded-lg font-bold btn-press shadow-sm hover:bg-orange-100">₹500</button>
+            </div>
+            
+            <input type="number" id="withAmt" placeholder="Amount (Min ₹200)" class="w-full p-3 bg-white text-gray-900 border border-gray-200 rounded-lg mb-4 outline-none font-bold text-center">
+            
+            <div class="flex gap-2 mb-3 bg-gray-100 p-1 rounded-lg">
+                <button id="tabUpi" onclick="toggleWithTab('upi')" class="flex-1 py-2 bg-white shadow rounded font-bold text-xs text-gray-900 transition">UPI ID</button>
+                <button id="tabBank" onclick="toggleWithTab('bank')" class="flex-1 py-2 rounded font-bold text-xs text-gray-500 transition">Bank Details</button>
+            </div>
+
+            <div id="withUpiDiv" class="mb-4">
+                <input type="text" id="withUpi" placeholder="Enter UPI ID (PhonePe/GPay)" class="w-full p-3 bg-white text-gray-900 border border-gray-200 rounded-lg outline-none font-bold text-sm">
+            </div>
+
+            <div id="withBankDiv" class="mb-4 hidden flex-col gap-3">
+                <input type="text" id="withBankAcc" placeholder="Account Number" class="w-full p-3 bg-white text-gray-900 border border-gray-200 rounded-lg outline-none font-bold text-sm">
+                <input type="text" id="withBankIfsc" placeholder="IFSC Code" class="w-full p-3 bg-white text-gray-900 border border-gray-200 rounded-lg outline-none font-bold text-sm">
+            </div>
+
+            <button onclick="submitReq('withdraw')" class="w-full py-4 fire-btn text-white font-black text-sm rounded-xl btn-press uppercase tracking-widest shadow-md">Request Withdrawal</button>
+        `); 
+    }
+
+    async function submitReq(type) {
+        playSound('click'); 
+        
+        if(type === 'deposit') {
+            const amt = parseFloat($('depAmt').value);
+            if(isNaN(amt) || amt < 100) return showToast('Min deposit is ₹100', 'error');
+            
+            // 🔥 Razorpay API Key Check Mockup 🔥
+            showToast('Loading Secure Gateway...', 'success');
+            $('globalLoader').style.display = 'flex';
+            setTimeout(() => {
+                $('globalLoader').style.display = 'none';
+                closeModal();
+                showModal('Payment Gateway', `
+                    <div class="text-center p-4">
+                        <i class="fa-solid fa-code text-4xl text-[#f05a28] mb-3"></i>
+                        <h3 class="text-lg font-black text-gray-900 mb-2">Integration Pending</h3>
+                        <p class="text-xs text-gray-500 font-bold mb-5">Please provide your Razorpay API Key to the admin to activate this ₹${amt} live deposit via PhonePe/GPay.</p>
+                        <button onclick="closeModal()" class="w-full py-3 bg-gray-900 text-white font-black text-sm rounded-xl btn-press shadow-md uppercase tracking-widest">Understood</button>
+                    </div>
+                `);
+            }, 1000);
+            return;
+        } 
+        
+        if (type === 'withdraw') {
+            const amt = parseFloat($('withAmt').value);
+            const isUpi = !$('withUpiDiv').classList.contains('hidden');
+            let detail = '';
+            
+            if(isUpi) {
+                detail = $('withUpi').value.trim();
+                if(!detail) return showToast('Enter UPI ID', 'error');
+                detail = 'UPI: ' + detail;
+            } else {
+                const acc = $('withBankAcc').value.trim();
+                const ifsc = $('withBankIfsc').value.trim();
+                if(!acc || !ifsc) return showToast('Enter Bank Details', 'error');
+                detail = `Bank: ${acc} | IFSC: ${ifsc}`;
+            }
+
+            if(isNaN(amt) || amt < 200) return showToast('Min withdraw is ₹200', 'error'); 
+            if(amt > parseFloat(userData.wallet_balance||0)) return showToast('Insufficient balance', 'error');
+            
+            $('globalLoader').style.display = 'flex';
+            const dateStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '-'); const wRef = db.ref(`users/${currentUser.uid}/daily_withdraws/${dateStr}`);
+            const wSnap = await wRef.once('value'); const wCount = wSnap.val() || 0;
+            if(wCount >= 3) { $('globalLoader').style.display = 'none'; return showToast("Daily limit (3) reached!", 'error'); }
+            
+            await db.ref(`users/${currentUser.uid}/wallet_balance`).set(parseFloat(userData.wallet_balance||0) - amt); await wRef.set(wCount + 1);
+            await db.ref(`payment_requests/${generateId()}`).set({ uid: currentUser.uid, username: userData.username, amount: amt, type: type, detail: detail, status: 'Pending', created_at: Date.now() });
+            
+            playSound('win'); showToast('Withdrawal Requested! 🔥', 'success'); closeModal(); loadWallet(); $('globalLoader').style.display = 'none';
+        }
+    }
+
+    function copyReferral() { navigator.clipboard.writeText($('myReferralCode').value); showToast('Copied to clipboard! 🔥'); }
+
+    // Casino Mines Engine
+    let minesState = { playing: false, bet: 0, mines: 3, grid:[], safeClicks: 0, multiplier: 1.0, isProcessing: false };
+    function resetMinesGame() {
+        minesState = { playing: false, bet: 0, mines: 3, grid:[], safeClicks: 0, multiplier: 1.0, isProcessing: false };
+        $('mineMultiplier').innerText = "1.00x"; $('mineProfit').innerText = "0.00";
+        $('cashoutBtn').classList.add('hidden'); $('startMineBtn').classList.remove('hidden'); $('startMineBtn').disabled = false;
+        $('minesGrid').innerHTML = ''; for(let i=0; i<25; i++) { $('minesGrid').innerHTML += `<div class="mine-btn" id="cell_${i}" onclick="clickMine(${i})"></div>`; }
+    }
+    async function startMinesGame() {
+        playSound('click'); const bet = parseFloat($('mineBet').value), mines = parseInt($('mineCount').value);
+        if(isNaN(bet) || bet < 10 || parseFloat(userData.wallet_balance || 0) < bet) return showToast('Check bet / low balance', 'error');
+        $('startMineBtn').disabled = true;
+        await db.ref(`users/${currentUser.uid}/wallet_balance`).set(parseFloat(userData.wallet_balance) - bet);
+        await db.ref(`transactions/${currentUser.uid}/${generateId()}`).set({ amount: bet, type: 'debit', description: 'Mines Wager', created_at: Date.now() });
+        minesState = { playing: true, bet: bet, mines: mines, safeClicks: 0, multiplier: 1.0, grid: Array(25).fill('safe'), isProcessing: false };
+        let planted = 0; while(planted < mines) { let r = Math.floor(Math.random() * 25); if(minesState.grid[r] === 'safe') { minesState.grid[r] = 'mine'; planted++; } }
+        $('startMineBtn').classList.add('hidden'); $('cashoutBtn').classList.remove('hidden');
+        $('minesGrid').innerHTML = ''; for(let i=0; i<25; i++) { $('minesGrid').innerHTML += `<div class="mine-btn" id="cell_${i}" onclick="clickMine(${i})"></div>`; }
+        playBGM(); showToast('Grid Active. Good Luck! 🔥', 'success');
+    }
+    function clickMine(index) {
+        if(!minesState.playing || minesState.isProcessing) return;
+        const cell = $('cell_'+index); if(cell.classList.contains('opened-safe') || cell.classList.contains('opened-mine')) return;
+        minesState.isProcessing = true;
+        if(minesState.grid[index] === 'mine') {
+            playSound('boom'); cell.classList.add('opened-mine'); cell.innerHTML = '<i class="fa-solid fa-bomb text-xl"></i>'; setTimeout(() => gameOver(false), 300);
+        } else {
+            playSound('click'); cell.classList.add('opened-safe'); cell.innerHTML = '<i class="fa-solid fa-star text-xl"></i>'; minesState.safeClicks++;
+            minesState.multiplier += ((minesState.mines / 25) * 0.4) + (minesState.safeClicks * 0.05);
+            $('mineMultiplier').innerText = minesState.multiplier.toFixed(2) + 'x'; $('mineProfit').innerText = ((minesState.bet * minesState.multiplier) - minesState.bet).toFixed(2);
+            if(minesState.safeClicks === 25 - minesState.mines) setTimeout(() => cashoutMines(), 300); else minesState.isProcessing = false;
+        }
+    }
+    function gameOver(win) {
+        minesState.playing = false; stopBGM(); $('cashoutBtn').classList.add('hidden'); $('startMineBtn').classList.remove('hidden'); $('startMineBtn').disabled = false; $('startMineBtn').innerText = "RESTART GRID";
+        for(let i=0; i<25; i++) {
+            const c = $('cell_'+i); if(!c.classList.contains('opened-safe') && !c.classList.contains('opened-mine')) {
+                if(minesState.grid[i] === 'mine') { c.innerHTML = '<i class="fa-solid fa-bomb text-lg text-red-500"></i>'; c.style.opacity = '0.3'; c.style.background = '#fecaca'; c.style.border = 'none'; } 
+                else { c.innerHTML = '<i class="fa-solid fa-star text-lg text-emerald-500"></i>'; c.style.opacity = '0.2'; }
+            }
+        }
+        if(!win) { playSound('lose'); showToast('You hit a mine!', 'error'); }
+    }
+    async function cashoutMines() {
+        if(!minesState.playing) return; minesState.playing = false; stopBGM(); const winAmt = minesState.bet * minesState.multiplier; $('cashoutBtn').disabled = true;
+        await db.ref(`users/${currentUser.uid}/wallet_balance`).set(parseFloat(userData.wallet_balance || 0) + winAmt);
+        await db.ref(`transactions/${currentUser.uid}/${generateId()}`).set({ amount: winAmt.toFixed(2), type: 'credit', description: `Mines Win`, created_at: Date.now() });
+        playSound('cashout'); showToast(`Extracted ₹${winAmt.toFixed(2)} 🔥`, 'success'); gameOver(true);
+    }
+</script>
+</body>
+</html>
